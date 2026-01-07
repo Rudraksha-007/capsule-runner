@@ -1,9 +1,11 @@
 package main
+
 import (
-	"gopkg.in/gomail.v2"
-	"os"
 	"io"
+	"os"
 	"strconv"
+
+	"gopkg.in/gomail.v2"
 )
 
 type MailConfig struct {
@@ -12,8 +14,8 @@ type MailConfig struct {
 	SMTPPort  int
 	SMTPUser  string
 	SMTPPass  string
-
 }
+
 func LoadMailConfig() MailConfig {
 	port, _ := strconv.Atoi(os.Getenv("SMTP_PORT"))
 
@@ -25,28 +27,28 @@ func LoadMailConfig() MailConfig {
 		SMTPPass:  os.Getenv("SMTP_PASS"),
 	}
 }
-func SendEmail(query emailPayload,list []string) (bool,error) {
-	var cfg=LoadMailConfig()
-	for _,email:=range list{
-		if err:=sendToSingleRecipient(cfg,query,email); err!=nil{
-			return false,err
+func SendEmail(query emailPayload, list []string) (bool, error) {
+	var cfg = LoadMailConfig()
+	for _, email := range list {
+		if err := sendToSingleRecipient(cfg, query, email); err != nil {
+			return false, err
 		}
 	}
-	return true,nil
+	return true, nil
 }
 
-func sendToSingleRecipient(cfg MailConfig,payload emailPayload,email string) (error){
+func sendToSingleRecipient(cfg MailConfig, payload emailPayload, email string) error {
 
 	// compose MIME message
-	m:=gomail.NewMessage()
-	// header 
-	m.SetHeader("From",cfg.FromEmail)
+	m := gomail.NewMessage()
+	// header
+	m.SetHeader("From", cfg.FromEmail)
 	m.SetHeader("To", email)
 	m.SetHeader("Subject", payload.title)
 	m.SetBody("text/plain", payload.msg)
 	// attach payload.adjunct (files)
-	for _,file:= range payload.adjunts{
-		if file==nil{
+	for _, file := range payload.adjunct {
+		if file == nil {
 			continue
 		}
 		m.Attach(
@@ -57,7 +59,7 @@ func sendToSingleRecipient(cfg MailConfig,payload emailPayload,email string) (er
 			}),
 		)
 	}
-	d:=gomail.NewDailer(
+	d := gomail.NewDialer(
 		cfg.SMTPHost,
 		cfg.SMTPPort,
 		cfg.SMTPUser,

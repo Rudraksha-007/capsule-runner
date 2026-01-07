@@ -18,6 +18,7 @@ type Capsule struct {
 	msg       string
 	media     Media
 	emailList []string
+	status    string
 }
 
 type Media struct {
@@ -58,7 +59,8 @@ func FetchDueCapsules(ctx context.Context) ([]Capsule, error) {
 			title,
 			message,
 			media,
-			email_list
+			email_list,
+			status
 		FROM capsule
 		WHERE release_time <= $1
 		AND status = 'due'
@@ -75,8 +77,14 @@ func FetchDueCapsules(ctx context.Context) ([]Capsule, error) {
 		var JSONBlob []byte
 		var emailJSON []byte
 
-		if err := rows.Scan(&c.id, &c.title, &c.msg, &JSONBlob); err != nil {
-			// incase the reading operation fails
+		if err := rows.Scan(
+			&c.id,
+			&c.title,
+			&c.msg,
+			&JSONBlob,
+			&emailJSON,
+			&c.status,
+		); err != nil {
 			return nil, err
 		}
 
@@ -92,6 +100,9 @@ func FetchDueCapsules(ctx context.Context) ([]Capsule, error) {
 		}
 		capsules = append(capsules, c)
 	}
+	if err:=tx.Commit();err!=nil{
+		return nil,err
+	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -99,8 +110,8 @@ func FetchDueCapsules(ctx context.Context) ([]Capsule, error) {
 }
 
 func MarkDue(c Capsule) {
-	return
-}
+	c.status="due"
+}	
 
 func StreamMedia_fromBucket(fileName string, url string) (*memories, error) {
 
@@ -155,9 +166,9 @@ func ProcessCapsule(c Capsule) (bool, error) {
 		attachments = append(attachments, mem)
 	}
 	payload.adjunct = attachments
-	var email_list []string=c.emailList
+	var email_list []string = c.emailList
 
-	sentStatus, err := SendEmail(payload,email_list)
+	sentStatus, err := SendEmail(payload, email_list)
 	if err != nil {
 		return false, err
 	}
@@ -165,5 +176,5 @@ func ProcessCapsule(c Capsule) (bool, error) {
 }
 
 func MarkDone(c Capsule) {
-	return 
+	c.status="done"
 }
