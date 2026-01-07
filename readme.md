@@ -1,8 +1,4 @@
 
-# Project Title
-
-A brief description of what this project does and who it's for
-
 # Capsule Runner
 
 Capsule Runner is a Go-based worker service designed to process time-capsule–style entries stored in a Supabase-backed PostgreSQL database. It identifies capsules that are due for release, retrieves associated media from Supabase Storage, and sends personalized emails with attachments to specified recipients.
