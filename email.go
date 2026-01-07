@@ -4,7 +4,6 @@ import (
 	"io"
 	"os"
 	"strconv"
-
 	"gopkg.in/gomail.v2"
 )
 
