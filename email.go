@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"strconv"
+
 	"gopkg.in/gomail.v2"
 )
 
@@ -27,6 +29,7 @@ func LoadMailConfig() MailConfig {
 	}
 }
 func SendEmail(query emailPayload, list []string) (bool, error) {
+	fmt.Print("Processing emailing...\n")
 	var cfg = LoadMailConfig()
 	for _, email := range list {
 		if err := sendToSingleRecipient(cfg, query, email); err != nil {
@@ -38,6 +41,7 @@ func SendEmail(query emailPayload, list []string) (bool, error) {
 
 func sendToSingleRecipient(cfg MailConfig, payload emailPayload, email string) error {
 
+	fmt.Print("Composing email to "+ email+ "\n")
 	// compose MIME message
 	m := gomail.NewMessage()
 	// header
@@ -51,7 +55,14 @@ func sendToSingleRecipient(cfg MailConfig, payload emailPayload, email string) e
 			continue
 		}
 		m.Attach(
-			file.name,
+			file.name, 
+
+			gomail.SetHeader(map[string][]string{
+				"Content-Type":              {"image/png"},
+				"Content-Disposition":       {`attachment; filename="` + file.name + `"`},
+				"Content-Transfer-Encoding": {"base64"},
+			}),
+
 			gomail.SetCopyFunc(func(w io.Writer) error {
 				_, err := w.Write(file.data)
 				return err
@@ -66,5 +77,6 @@ func sendToSingleRecipient(cfg MailConfig, payload emailPayload, email string) e
 	)
 
 	// send via SMTP
+	fmt.Print("Email Dispatched...\n")
 	return d.DialAndSend(m)
 }

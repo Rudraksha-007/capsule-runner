@@ -1,17 +1,21 @@
 package main
+
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"github.com/joho/godotenv"
 )
 
 func main(){
+	godotenv.Load()
 	http.HandleFunc("/run",auth(runJob))
 	port:=os.Getenv("PORT")
 	if port==""{
 		port="8080"
 	}
-	log.Println("Go Worker Running on : "+port)
+	log.Println("Go Worker Running on : "+port+ "\n")
 	log.Fatal(http.ListenAndServe(":"+port,nil))
 }
 
@@ -23,6 +27,7 @@ func auth(next http.HandlerFunc) http.HandlerFunc{
 			http.Error(w,"unauthorized",http.StatusUnauthorized)
 			return
 		}
+		fmt.Print("Calling the handler\n")
 		// if the req. is valid we call the function that has to process this job and will return that response 
 		next(w,r)
 	}

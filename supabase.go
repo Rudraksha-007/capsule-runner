@@ -8,8 +8,9 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type Capsule struct {
@@ -22,9 +23,10 @@ type Capsule struct {
 }
 
 type Media struct {
-	Files []File `json:"files"`
+	Files []File `json:"file"`
 }
 type File struct {
+	Name   string `json:"name"`
 	Bucket string `json:"bucket"`
 	Path   string `json:"path"`
 }
@@ -61,7 +63,7 @@ func FetchDueCapsules(ctx context.Context) ([]Capsule, error) {
 			media,
 			email_list,
 			status
-		FROM capsule
+		FROM public.capsules_capsule
 		WHERE release_time <= $1
 		AND status = 'due'
 		FOR UPDATE
@@ -100,20 +102,24 @@ func FetchDueCapsules(ctx context.Context) ([]Capsule, error) {
 		}
 		capsules = append(capsules, c)
 	}
-	if err:=tx.Commit();err!=nil{
-		return nil,err
+	if err := tx.Commit(); err != nil {
+		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+	fmt.Print("Fetching due capsules was successfull\n")
 	return capsules, nil
 }
 
 func MarkDue(c Capsule) {
-	c.status="due"
-}	
+	c.status = "due"
+}
 
 func StreamMedia_fromBucket(fileName string, url string) (*memories, error) {
+	var BASE string
+	BASE = "https://yuootleblefkauksfscf.supabase.co/storage/v1/object/authenticated/Annex"
+	url = BASE + "/" + url
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -145,7 +151,7 @@ func StreamMedia_fromBucket(fileName string, url string) (*memories, error) {
 		name: fileName,
 		data: data,
 	}
-
+	fmt.Print("Fetched item from bucket successfully...\n")
 	return mem, nil
 }
 
@@ -154,12 +160,15 @@ func ProcessCapsule(c Capsule) (bool, error) {
 	payload.title = c.title
 	payload.msg = c.msg
 	var attachments []*memories
+	fmt.Print("Processing the capsule\n")
 
 	// now we need to fetch the file specified in the capsule via supabase
-	for i, file := range c.media.Files {
+	for _, file := range c.media.Files {
+		fmt.Print("Fetching files...\n")
 		path := file.Path
-		name := file.Bucket + strconv.Itoa(i)
+		name := file.Name
 		mem, err := StreamMedia_fromBucket(name, path)
+		fmt.Print("Fetched = " + path + " " + name + " from the bucket\n")
 		if err != nil {
 			return false, err
 		}
@@ -176,5 +185,5 @@ func ProcessCapsule(c Capsule) (bool, error) {
 }
 
 func MarkDone(c Capsule) {
-	c.status="done"
+	c.status = "done"
 }
