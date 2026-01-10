@@ -64,7 +64,6 @@ func FetchDueCapsules(ctx context.Context) ([]Capsule, error) {
 			status
 		FROM public.capsules_capsule
 		WHERE release_time <= $1
-		AND status = 'due'
 	`, time.Now().UTC())
 	if err != nil {
 		return nil, err
