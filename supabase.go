@@ -55,16 +55,16 @@ func FetchDueCapsules(ctx context.Context) ([]Capsule, error) {
 	// Running our query
 	// to get the tuples such that:“time has come and capsule is due”
 	rows, err := db.QueryContext(ctx, `
-		SELECT 
-			id,
-			title,
-			message,
-			media,
-			email_list,
-			status
-		FROM public.capsules_capsule
-		WHERE release_time <= $1
-	`, time.Now().UTC())
+    SELECT 
+        id,
+        title,
+        message,
+        media,
+        email_list,
+        status
+    FROM public.capsules_capsule
+    WHERE release_time <= $1
+`, time.Now().In(time.FixedZone("IST", 5*60*60+30*60)))
 	if err != nil {
 		return nil, err
 	}
