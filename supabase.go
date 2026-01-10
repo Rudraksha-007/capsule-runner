@@ -41,7 +41,6 @@ type memories struct {
 }
 
 func FetchDueCapsules(ctx context.Context) ([]Capsule, error) {
-	// setup to connect and talk to the DB
 	now := time.Now().UTC()
 	fmt.Println("WORKER_NOW_UTC =", now.Format(time.RFC3339))
 
@@ -52,25 +51,65 @@ func FetchDueCapsules(ctx context.Context) ([]Capsule, error) {
 	defer db.Close()
 	fmt.Print("Connection to DB was done\n")
 	fmt.Println("DB_URL =", os.Getenv("DATABASE_URL"))
-	// Running our query
-	// to get the tuples such that:“time has come and capsule is due”
+	
+	// First, let's see ALL capsules
+	var count int
+	err = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM public.capsules_capsule").Scan(&count)
+	if err != nil {
+		fmt.Println("Error counting capsules:", err)
+	} else {
+		fmt.Println("Total capsules in DB:", count)
+	}
+	
+	// Check how many should be due
+	var dueCount int
+	err = db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM public.capsules_capsule 
+		WHERE release_time <= $1
+	`, now).Scan(&dueCount)
+	if err != nil {
+		fmt.Println("Error counting due capsules:", err)
+	} else {
+		fmt.Println("Capsules with release_time <= now:", dueCount)
+	}
+	
+	// Show the actual release times
+	timeRows, err := db.QueryContext(ctx, `
+		SELECT id, release_time, status 
+		FROM public.capsules_capsule 
+		ORDER BY release_time
+	`)
+	if err == nil {
+		fmt.Println("All capsules:")
+		for timeRows.Next() {
+			var id string
+			var releaseTime time.Time
+			var status string
+			timeRows.Scan(&id, &releaseTime, &status)
+			fmt.Printf("  ID: %s, Release: %s, Status: %s\n", id, releaseTime.Format(time.RFC3339), status)
+		}
+		timeRows.Close()
+	}
+	
+	// Running our actual query
 	rows, err := db.QueryContext(ctx, `
-    SELECT 
-        id,
-        title,
-        message,
-        media,
-        email_list,
-        status
-    FROM public.capsules_capsule
-    WHERE release_time <= $1
-`, time.Now().In(time.FixedZone("IST", 5*60*60+30*60)))
+		SELECT 
+			id,
+			title,
+			message,
+			media,
+			email_list,
+			status
+		FROM public.capsules_capsule
+		WHERE release_time <= $1
+	`, now)
+	
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close() // tells compiler to automatically close the resource
+	defer rows.Close()
 
-	var capsules []Capsule //make arrays of capsule object and ids
+	var capsules []Capsule
 	for rows.Next() {
 		var c Capsule
 		var JSONBlob []byte
@@ -102,7 +141,7 @@ func FetchDueCapsules(ctx context.Context) ([]Capsule, error) {
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	fmt.Print("Fetching due capsules was successfull\n")
+	fmt.Printf("Fetched %d due capsules\n", len(capsules))
 	return capsules, nil
 }
 
