@@ -35,6 +35,9 @@ func auth(next http.HandlerFunc) http.HandlerFunc{
 
 func runJob(w http.ResponseWriter, r *http.Request) {
 	capsules, err := FetchDueCapsules(r.Context())
+	if len(capsules)==0{
+		fmt.Print("No due capsules\n")
+	}
 	if err!=nil{
 		http.Error(w,err.Error(),500)
 		return	

@@ -47,6 +47,7 @@ func FetchDueCapsules(ctx context.Context) ([]Capsule, error) {
 		return nil, err
 	}
 	defer db.Close()
+	fmt.Print("Connection to DB was done\n")
 	tx, err := db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return nil, err
