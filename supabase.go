@@ -42,13 +42,16 @@ type memories struct {
 
 func FetchDueCapsules(ctx context.Context) ([]Capsule, error) {
 	// setup to connect and talk to the DB
+	now := time.Now().UTC()
+	fmt.Println("WORKER_NOW_UTC =", now.Format(time.RFC3339))
+
 	db, err := sql.Open("pgx", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		return nil, err
 	}
 	defer db.Close()
 	fmt.Print("Connection to DB was done\n")
-
+	fmt.Println("DB_URL =", os.Getenv("DATABASE_URL"))
 	// Running our query
 	// to get the tuples such that:“time has come and capsule is due”
 	rows, err := db.QueryContext(ctx, `
