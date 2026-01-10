@@ -43,8 +43,9 @@ type memories struct {
 func FetchDueCapsules(ctx context.Context) ([]Capsule, error) {
 	now := time.Now().UTC()
 	fmt.Println("WORKER_NOW_UTC =", now.Format(time.RFC3339))
-
-	db, err := sql.Open("pgx", os.Getenv("DATABASE_URL"))
+	dbURL := os.Getenv("DATABASE_URL")
+	fmt.Println("Attempting connection with:", dbURL)
+	db, err := sql.Open("pgx", dbURL)
 	if err != nil {
 		return nil, err
 	}
