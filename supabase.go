@@ -48,15 +48,10 @@ func FetchDueCapsules(ctx context.Context) ([]Capsule, error) {
 	}
 	defer db.Close()
 	fmt.Print("Connection to DB was done\n")
-	tx, err := db.BeginTx(ctx, &sql.TxOptions{})
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
 
 	// Running our query
 	// to get the tuples such that:“time has come and capsule is due”
-	rows, err := tx.QueryContext(ctx, `
+	rows, err := db.QueryContext(ctx, `
 		SELECT 
 			id,
 			title,
